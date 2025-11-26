@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [ main, road_to_stable, docker_refactor ]
+    branches: [ main, road_to_stable ]
   pull_request:
     branches: [ main, road_to_stable ]
 
