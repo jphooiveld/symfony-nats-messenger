@@ -5,6 +5,11 @@
 
 set -e
 
+# Function to run docker compose with config file for a different directory
+compose() {
+    docker compose -f ../nats/docker-compose.yaml "$@"
+}
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -27,10 +32,13 @@ if ! command -v docker &> /dev/null; then
     exit 1
 fi
 
+# Start docker compose for container
+compose up --wait
+
 # Check if composer dependencies are installed
 if [ ! -d "vendor" ]; then
     echo -e "${YELLOW}Installing Composer dependencies...${NC}"
-    composer install
+    compose exec nats composer install
 fi
 
 echo ""
@@ -54,27 +62,27 @@ fi
 case $choice in
     1)
         echo -e "${GREEN}Running all functional tests...${NC}"
-        vendor/bin/behat
+        compose exec nats vendor/bin/behat
         ;;
     2)
         echo -e "${GREEN}Running: Setup NATS stream with max age configuration${NC}"
-        vendor/bin/behat features/nats_setup.feature:9
+        compose exec nats vendor/bin/behat features/nats_setup.feature:9
         ;;
     3)
         echo -e "${GREEN}Running: Setup command handles existing streams gracefully${NC}"
-        vendor/bin/behat features/nats_setup.feature:16
+        compose exec nats vendor/bin/behat features/nats_setup.feature:16
         ;;
     4)
         echo -e "${GREEN}Running: Setup command fails gracefully when NATS is unavailable${NC}"
-        vendor/bin/behat features/nats_setup.feature:23
+        compose exec nats vendor/bin/behat features/nats_setup.feature:23
         ;;
     5)
         echo -e "${GREEN}Running dry run (syntax check)...${NC}"
-        vendor/bin/behat --dry-run
+        compose exec nats vendor/bin/behat --dry-run
         ;;
     6)
         echo -e "${GREEN}Showing test step definitions...${NC}"
-        vendor/bin/behat --definitions
+        compose exec nats vendor/bin/behat --definitions
         ;;
     *)
         echo -e "${RED}Invalid option. Please choose 1-6.${NC}"
@@ -89,5 +97,5 @@ echo -e "${GREEN}Test execution completed!${NC}"
 echo ""
 echo -e "${YELLOW}Note: Tests automatically clean up Docker containers and temporary files.${NC}"
 echo "If tests were interrupted, you can manually clean up with:"
-echo "  cd nats && docker compose down"
+echo "  docker compose down -f ../nats/docker-compose.yaml"
 echo "  rm -f config/packages/test_messenger.yaml"

@@ -29,6 +29,11 @@ SKIP_SEND=""
 SKIP_CONSUME=""
 TRANSPORT="nats_jetstream"
 
+# Function to run docker compose with config file for a different directory
+compose() {
+    docker compose -f ../nats/docker-compose.yaml "$@"
+}
+
 # Parse arguments
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -87,20 +92,8 @@ echo -e "  ${YELLOW}Batch Sizes:${NC}     $BATCH_SIZES"
 echo -e "  ${YELLOW}Transport:${NC}       $TRANSPORT"
 echo ""
 
-# Verify NATS server is running
-echo -e "${CYAN}Pre-flight Checks:${NC}"
-if command -v nats &> /dev/null; then
-    echo -e "  ${GREEN}✓${NC} nats CLI found"
-
-    if nats server ls &> /dev/null 2>&1 || docker ps --filter "ancestor=nats" --quiet &> /dev/null; then
-        echo -e "  ${GREEN}✓${NC} NATS server appears to be running"
-    else
-        echo -e "  ${YELLOW}⚠${NC}  NATS server might not be running (continuing anyway)"
-    fi
-else
-    echo -e "  ${YELLOW}⚠${NC}  nats CLI not found (continuing anyway)"
-fi
-echo ""
+# Start the docker container
+compose up --wait
 
 # Run the benchmark command
 echo -e "${CYAN}Running Benchmark...${NC}"
@@ -108,7 +101,7 @@ echo ""
 
 cat config/packages/test_messenger.yaml.dist > config/packages/test_messenger.yaml
 
-php bin/console app:benchmark-messenger \
+compose exec nats php bin/console app:benchmark-messenger \
     --count="$MESSAGE_COUNT" \
     --batches="$BATCH_SIZES" \
     $SKIP_SEND \

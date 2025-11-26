@@ -674,8 +674,8 @@ class NatsSetupContext implements Context
             return; // NATS is already running
         }
 
-        // Use docker compose to start NATS
-        $command = ['docker', 'compose', 'up', '-d'];
+        // Use supervisorctl to start NATS
+        $command = ['supervisorctl', 'start', 'nats'];
         $process = new Process($command, __DIR__ . '/../../../nats');
         $process->run();
 
@@ -690,8 +690,8 @@ class NatsSetupContext implements Context
 
     private function stopNatsServer(): void
     {
-        // Use docker compose to stop NATS
-        $command = ['docker', 'compose', 'down'];
+        // Use supervisorctl to stop NATS
+        $command = ['supervisorctl', 'stop', 'nats'];
         $process = new Process($command, __DIR__ . '/../../../nats');
         $process->run();
     }

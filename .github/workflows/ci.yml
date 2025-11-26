@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [ main, road_to_stable ]
+    branches: [ main, road_to_stable, docker_refactor ]
   pull_request:
     branches: [ main, road_to_stable ]
 
@@ -43,33 +43,14 @@ jobs:
     #     key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
     #     restore-keys: ${{ runner.os }}-composer-
 
+    - name: Start docker container
+      run: make run-nats
+
     - name: Install dependencies
-      run: composer install --prefer-dist --no-progress --no-suggest
-
-    - name: Start NATS server
-      run: |
-        make run-nats
-        sleep 10
-        # Wait for NATS to be ready with multiple checks
-        timeout 60 bash -c 'until nc -z localhost 4222; do sleep 2; done'
-        echo "NATS server is ready on port 4222"
-
-        # Verify NATS is responding
-        timeout 10 bash -c 'until curl -f http://localhost:8223/varz > /dev/null 2>&1; do sleep 1; done' || echo "NATS monitoring not available"
-
-        # Show NATS server status
-        docker logs nats_test || echo "Could not get NATS logs"
-
-    - name: Verify NATS is running
-      run: |
-        docker ps | grep nats || echo "No NATS container found"
-        curl -f http://localhost:8223/varz | head -20 || echo "NATS monitoring endpoint not responding"
-        # Test basic NATS connectivity
-        timeout 5 bash -c 'nc -zv localhost 4222' || echo "NATS port 4222 not accessible"
+      run: make setup-unit-tests
 
     - name: Run unit tests with coverage
-      run: |
-        make run-unit-tests
+      run: make run-unit-tests
 
     - name: Check coverage threshold (90%)
       run: |

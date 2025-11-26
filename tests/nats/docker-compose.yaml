@@ -1,13 +1,16 @@
 services:
   nats:
-    image: nats:alpine
+    build:
+      context: .
     container_name: nats_test
-    restart: always
-    command: -c /etc/nats/nats.conf
+    restart: unless-stopped
+    working_dir: /library/tests/functional
     ports:
       - "4222:4222" # client port
       - "6223:6222" # cluster port (changed to avoid conflict)
       - "8223:8222" # monitoring port (changed to avoid conflict)
     volumes:
-      - ./nats.conf:/etc/nats/nats.conf
-      - ./data:/data
+      - ../../:/library
+      - nats-data:/data
+volumes:
+  nats-data:
